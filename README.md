@@ -1,5 +1,7 @@
 # VulnGraph AI
 
+Demo video link : https://www.youtube.com/watch?v=Ga550O0RQOk
+
 Intelligent dependency risk scoring, graph-based reachability analysis, and vulnerability prioritization platform.
 
 VulnGraph AI ingests Software Bill of Materials (SBOMs), models dependencies as a directed graph, applies context-aware risk scoring, ranks vulnerabilities using a pre-trained Random Forest classifier, and outputs actionable remediation recommendations with config file patches.
