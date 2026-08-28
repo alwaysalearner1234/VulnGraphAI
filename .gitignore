@@ -1,0 +1,20 @@
+# Python virtual environment
+backend/venv/
+venv/
+.venv/
+env/
+.env/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# SQLite database and local data
+backend/data/vulngraph.db
+backend/ml/prioritizer_model.joblib
+
+# OS metadata
+.DS_Store
+Thumbs.db

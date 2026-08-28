@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VulnGraph AI - Intelligent Dependency Risk scoring and Vulnerability Prioritization</title>
+    <meta name="description" content="Intelligent dependency risk analysis backend and graph-based vulnerability prioritization engine.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Cytoscape for Graph Visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <!-- Chart.js for Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-circle-nodes logo-icon"></i>
+                <span class="logo-text">VulnGraph <span class="accent-text">AI</span></span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-target="dashboard-view" id="nav-dashboard">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-item" data-target="graph-view" id="nav-graph">
+                    <i class="fa-solid fa-diagram-project"></i> Dependency Graph
+                </button>
+                <button class="nav-item" data-target="vulns-view" id="nav-vulns">
+                    <i class="fa-solid fa-shield-halved"></i> Vulnerabilities
+                </button>
+                <button class="nav-item" data-target="config-view" id="nav-config">
+                    <i class="fa-solid fa-sliders"></i> Risk Config
+                </button>
+                <button class="nav-item" data-target="upload-view" id="nav-upload">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload SBOM
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <span class="status-indicator online"></span>
+                    <span class="status-label">Backend Connected</span>
+                </div>
+                <div class="footer-version">v1.0.0</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Top Header Bar -->
+            <header class="app-header">
+                <div class="header-title-area">
+                    <h1 id="view-title">Dashboard Overview</h1>
+                    <p class="header-subtitle" id="view-subtitle">Security intelligence and risk distribution summary</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-quick-scan">
+                        <i class="fa-solid fa-arrows-rotate"></i> Sync Scan
+                    </button>
+                </div>
+            </header>
+
+            <!-- VIEW 1: Dashboard Overview -->
+            <section class="view-section active" id="dashboard-view">
+                <!-- KPI cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" id="kpi-repos">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Repositories</span>
+                            <i class="fa-solid fa-folder-open kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="val-repos">-</div>
+                        <div class="kpi-footer">Monitored repositories</div>
+                    </div>
+                    <div class="kpi-card" id="kpi-deps">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Dependencies</span>
+                            <i class="fa-solid fa-cubes kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="val-deps">-</div>
+                        <div class="kpi-footer">Total packages analyzed</div>
+                    </div>
+                    <div class="kpi-card text-danger" id="kpi-vulns">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Active Vulnerabilities</span>
+                            <i class="fa-solid fa-bug kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="val-vulns">-</div>
+                        <div class="kpi-footer"><span id="val-critical-vulns">0</span> Critical severity threats</div>
+                    </div>
+                    <div class="kpi-card text-warning" id="kpi-builds">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Blocked Builds</span>
+                            <i class="fa-solid fa-ban kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="val-blocked-builds">-</div>
+                        <div class="kpi-footer">Failing security gate rules</div>
+                    </div>
+                </div>
+
+                <!-- Charts layout -->
+                <div class="dashboard-charts">
+                    <div class="chart-card glass-panel">
+                        <h3>Vulnerability Severity</h3>
+                        <div class="chart-container">
+                            <canvas id="severityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card glass-panel">
+                        <h3>Reachability Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="reachabilityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card glass-panel wide-chart">
+                        <h3>Risk Score by Repository</h3>
+                        <div class="chart-container">
+                            <canvas id="repoRiskChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent active findings table -->
+                <div class="table-card glass-panel">
+                    <div class="table-header">
+                        <h3>High Prioritized Vulnerabilities</h3>
+                        <button class="btn btn-text" id="btn-view-all-findings">View All <i class="fa-solid fa-angle-right"></i></button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>CVE ID</th>
+                                    <th>Package</th>
+                                    <th>Ecosystem</th>
+                                    <th>CVSS</th>
+                                    <th>EPSS</th>
+                                    <th>Depth</th>
+                                    <th>Calculated Risk</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-findings-tbody">
+                                <tr><td colspan="8" class="text-center">Loading vulnerabilities...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: Dependency Graph Visualizer -->
+            <section class="view-section" id="graph-view">
+                <div class="graph-layout-container">
+                    <div class="graph-control-bar glass-panel">
+                        <div class="control-group">
+                            <label for="repo-select">Repository:</label>
+                            <select id="repo-select" class="form-control">
+                                <option value="">Select a Repository...</option>
+                            </select>
+                        </div>
+                        <div class="graph-legends">
+                            <span class="legend"><span class="color-badge critical"></span> Critical Risk</span>
+                            <span class="legend"><span class="color-badge high"></span> High Risk</span>
+                            <span class="legend"><span class="color-badge medium"></span> Medium</span>
+                            <span class="legend"><span class="color-badge safe"></span> Safe</span>
+                            <span class="legend"><span class="color-badge direct"></span> Direct Dep (Solid)</span>
+                            <span class="legend"><span class="color-badge transitive"></span> Transitive (Dotted)</span>
+                        </div>
+                    </div>
+
+                    <div class="graph-workspace">
+                        <!-- Canvas for cytoscape graph -->
+                        <div class="graph-canvas-container glass-panel">
+                            <div id="cy" class="cy-canvas"></div>
+                            <div class="canvas-help-overlay">
+                                <i class="fa-solid fa-circle-info"></i> Click a node to view its package details
+                            </div>
+                        </div>
+                        
+                        <!-- Panel for showing selected node info -->
+                        <div class="graph-details-panel glass-panel" id="node-details-panel">
+                            <div class="panel-empty-state" id="details-empty-state">
+                                <i class="fa-solid fa-mouse-pointer"></i>
+                                <h4>No Package Selected</h4>
+                                <p>Select any node in the dependency graph to inspect its parameters, risk metrics, and downstream impacts.</p>
+                            </div>
+                            <div class="panel-content hidden" id="details-content">
+                                <div class="node-header">
+                                    <h3 id="node-name">lodash</h3>
+                                    <span class="badge" id="node-type">NPM</span>
+                                </div>
+                                <div class="node-meta-grid">
+                                    <div class="meta-item">
+                                        <span class="meta-label">Installed Version</span>
+                                        <span class="meta-value" id="node-version">4.17.15</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">Dependency Depth</span>
+                                        <span class="meta-value" id="node-depth">Direct (Depth 1)</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">Dependents Count</span>
+                                        <span class="meta-value" id="node-dependents">5</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">Max Risk Category</span>
+                                        <span class="meta-value badge" id="node-risk-badge">SAFE</span>
+                                    </div>
+                                </div>
+
+                                <div class="node-vulnerabilities-section" id="node-vulns-section">
+                                    <h4>Linked Vulnerabilities</h4>
+                                    <div class="node-vulns-list" id="node-vulns-list">
+                                        <!-- Dynamic findings item list -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: Vulnerabilities Table List -->
+            <section class="view-section" id="vulns-view">
+                <div class="filters-panel glass-panel">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label for="filter-repo">Filter Repository</label>
+                            <select id="filter-repo" class="form-control">
+                                <option value="">All Repositories</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-priority">Filter Priority</label>
+                            <select id="filter-priority" class="form-control">
+                                <option value="">All Severities</option>
+                                <option value="CRITICAL">Critical</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
+                            </select>
+                        </div>
+                        <div class="filter-group-right">
+                            <div class="search-input-wrapper">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="filter-search" class="form-control" placeholder="Search by package name, CVE...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card glass-panel">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>CVE ID</th>
+                                    <th>Package</th>
+                                    <th>Repository</th>
+                                    <th>Severity</th>
+                                    <th>CVSS</th>
+                                    <th>EPSS</th>
+                                    <th>Depth</th>
+                                    <th>Risk Score</th>
+                                    <th>Status</th>
+                                    <th>Remediation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vulns-list-tbody">
+                                <tr><td colspan="10" class="text-center">Loading vulnerability entries...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: Risk Weights Settings Configuration -->
+            <section class="view-section" id="config-view">
+                <div class="config-layout">
+                    <div class="config-settings-card glass-panel">
+                        <h2>Risk Scoring Configuration</h2>
+                        <p class="section-desc">Adjust the mathematical weights below to customize how the risk scoring engine weights different security inputs. Changes will trigger immediate recalculations for all scanned repositories and findings.</p>
+                        
+                        <form id="risk-config-form" class="config-form">
+                            <div class="slider-group">
+                                <div class="slider-header">
+                                    <label for="input-cvss-weight">CVSS Severity Base Weight</label>
+                                    <span class="slider-val" id="val-cvss-weight">10.0</span>
+                                </div>
+                                <input type="range" id="input-cvss-weight" min="1.0" max="20.0" step="0.5" value="10.0" class="weight-slider">
+                                <p class="slider-info">Controls baseline severity weighting (scales CVSS score 0-10).</p>
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-header">
+                                    <label for="input-epss-weight">EPSS Exploit Probability Weight</label>
+                                    <span class="slider-val" id="val-epss-weight">1.0</span>
+                                </div>
+                                <input type="range" id="input-epss-weight" min="0.1" max="5.0" step="0.1" value="1.0" class="weight-slider">
+                                <p class="slider-info">Adjusts sensitivity to the likelihood of real-world exploitation in-the-wild.</p>
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-header">
+                                    <label for="input-patch-lag-weight">Patch Lag Weight</label>
+                                    <span class="slider-val" id="val-patch-lag-weight">1.0</span>
+                                </div>
+                                <input type="range" id="input-patch-lag-weight" min="0.1" max="3.0" step="0.1" value="1.0" class="weight-slider">
+                                <p class="slider-info">Weights the distance between your installed version and the vulnerability fix version.</p>
+                            </div>
+
+                            <div class="slider-group">
+                                <div class="slider-header">
+                                    <label for="input-depth-weight">Dependency Depth Decay Weight</label>
+                                    <span class="slider-val" id="val-depth-weight">1.0</span>
+                                </div>
+                                <input type="range" id="input-depth-weight" min="0.1" max="3.0" step="0.1" value="1.0" class="weight-slider">
+                                <p class="slider-info">Determines the risk mitigation decay rate for deep transitive libraries (higher values reduce transitive risk faster).</p>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" id="btn-reset-weights">
+                                    Reset to Defaults
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="btn-save-weights">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save & Re-evaluate
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="config-math-card glass-panel">
+                        <h2>Under the Hood: Context-Aware Risk</h2>
+                        <p class="section-desc">VulnGraph AI integrates graph properties, version distance, and threat intel dynamically using this formula:</p>
+                        
+                        <div class="formula-box">
+                            $$Risk = CVSS \cdot W_{cvss} \cdot (0.15 + 0.85 \cdot EPSS)^{W_{epss}} \cdot (1 + \text{PatchLag} \cdot W_{patch}) \cdot \left(\frac{1}{\sqrt{\text{Depth}}}\right)^{W_{depth}}$$
+                        </div>
+
+                        <div class="formula-explanation">
+                            <h4>Formula Variables & Downscaling:</h4>
+                            <ul>
+                                <li><strong>CVSS Base</strong>: Initial vulnerability severity score (0 to 10).</li>
+                                <li><strong>EPSS Factor</strong>: Exploitation likelihood. High EPSS keeps full CVSS; low EPSS scales risk down, but never lower than 15% to guarantee a baseline alert.</li>
+                                <li><strong>Patch Lag</strong>: Version distance calculated as <code>(major * 1.0) + (minor * 0.25) + (patch * 0.05)</code>. Outdated code raises risk score.</li>
+                                <li><strong>Depth Decay</strong>: Direct dependencies maintain full risk score. Transitive dependencies are cut by <code>1 / sqrt(depth)</code> to represent lower reachability.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 5: SBOM File Ingestion Upload -->
+            <section class="view-section" id="upload-view">
+                <div class="upload-container">
+                    <div class="upload-card glass-panel">
+                        <h2>Ingest Software Bill of Materials (SBOM)</h2>
+                        <p class="section-desc">Upload a CycloneDX or SPDX SBOM JSON file to analyze repository dependencies, construct the dependency graph, map threat intelligence, and predict prioritization ranks.</p>
+                        
+                        <form id="sbom-upload-form" class="upload-form">
+                            <div class="form-group">
+                                <label for="input-repo-name">Custom Repository Name <span class="optional">(optional)</span></label>
+                                <input type="text" id="input-repo-name" class="form-control" placeholder="Defaults to filename (e.g. ecommerce-api)">
+                                <p class="form-help">Enter a specific repository name to store under, or let the parser extract it from the SBOM metadata/filename.</p>
+                            </div>
+
+                            <div class="upload-dropzone" id="upload-dropzone">
+                                <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                                <h3>Drag and Drop SBOM JSON file here</h3>
+                                <p>or click to browse local filesystem</p>
+                                <input type="file" id="input-sbom-file" accept=".json" class="hidden-file-input">
+                                <div class="selected-file-name" id="selected-file-name">No file selected</div>
+                            </div>
+
+                            <div class="form-actions center">
+                                <button type="submit" class="btn btn-primary btn-large" id="btn-submit-sbom" disabled>
+                                    <i class="fa-solid fa-circle-play"></i> Run Security Scan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Supported formats helper -->
+                    <div class="formats-panel glass-panel">
+                        <h3>Supported Formats</h3>
+                        <div class="formats-grid">
+                            <div class="format-info">
+                                <i class="fa-solid fa-file-invoice format-icon"></i>
+                                <h4>CycloneDX JSON</h4>
+                                <p>Standard components, metadata, dependencies relationships graph nodes (spec versions 1.2+).</p>
+                            </div>
+                            <div class="format-info">
+                                <i class="fa-solid fa-file-shield format-icon"></i>
+                                <h4>SPDX JSON</h4>
+                                <p>Standard package indexes, documentDescribes lists, relationships blocks (spec versions 2.2+).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- REMEDIATION DETAIL MODAL -->
+    <div class="modal-backdrop hidden" id="remediation-modal">
+        <div class="modal-container glass-panel">
+            <div class="modal-header">
+                <h3>Actionable Remediation Advice</h3>
+                <button class="btn-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                <!-- Dynamic Content Loaded from API -->
+                <div class="remediation-header-info">
+                    <h2 id="modal-cve-title">CVE-2021-23337</h2>
+                    <p id="modal-pkg-info">Vulnerable Package: <strong>lodash</strong> v4.17.15 &rarr; Upgrade to <strong>4.17.21</strong></p>
+                </div>
+                
+                <div class="remediation-explanation glass-panel">
+                    <h4>Impact & Graph Reachability Analysis</h4>
+                    <p id="modal-explanation">Upgrading lodash from 4.17.15 to 4.17.21 resolves vulnerability CVE-2021-23337. This is a critical shared component in your dependency graph; updating it secures 5 dependents that transitively rely on this library.</p>
+                </div>
+
+                <div class="command-block-container">
+                    <h4>Upgrade Command</h4>
+                    <div class="command-box">
+                        <code id="modal-command">npm install lodash@4.17.21 --save-exact</code>
+                        <button class="btn-copy" id="btn-copy-cmd" title="Copy to clipboard"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                </div>
+
+                <div class="patch-diff-container">
+                    <h4>Recommended Configuration Patch</h4>
+                    <div class="patch-header">
+                        <span class="file-name" id="modal-config-file">package.json</span>
+                    </div>
+                    <pre class="diff-block"><code id="modal-diff-content">diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+-    "lodash": "^4.17.15",
++    "lodash": "^4.17.21",</code></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancel-remediation">Close</button>
+                <button class="btn btn-primary" id="btn-apply-remediation">
+                    <i class="fa-solid fa-wrench"></i> Sim-Apply Remediation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast-notification hidden" id="toast">
+        <i class="fa-solid fa-circle-check toast-icon" id="toast-icon"></i>
+        <span class="toast-message" id="toast-message">Remediation successfully simulated!</span>
+    </div>
+
+    <!-- Application Controller logic -->
+    <script src="/app.js"></script>
+</body>
+</html>

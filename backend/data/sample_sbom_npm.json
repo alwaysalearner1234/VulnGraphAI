@@ -1,0 +1,87 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:3e671687-395b-4379-a790-0f2c41872f2e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-08-27T08:00:00Z",
+    "component": {
+      "bom-ref": "ecommerce-api",
+      "type": "application",
+      "name": "ecommerce-api",
+      "version": "1.0.0",
+      "purl": "pkg:npm/ecommerce-api@1.0.0"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "express",
+      "type": "library",
+      "name": "express",
+      "version": "4.16.0",
+      "purl": "pkg:npm/express@4.16.0"
+    },
+    {
+      "bom-ref": "jsonwebtoken",
+      "type": "library",
+      "name": "jsonwebtoken",
+      "version": "8.5.1",
+      "purl": "pkg:npm/jsonwebtoken@8.5.1"
+    },
+    {
+      "bom-ref": "body-parser",
+      "type": "library",
+      "name": "body-parser",
+      "version": "1.19.0",
+      "purl": "pkg:npm/body-parser@1.19.0"
+    },
+    {
+      "bom-ref": "lodash",
+      "type": "library",
+      "name": "lodash",
+      "version": "4.17.15",
+      "purl": "pkg:npm/lodash@4.17.15"
+    },
+    {
+      "bom-ref": "uuid",
+      "type": "library",
+      "name": "uuid",
+      "version": "8.3.2",
+      "purl": "pkg:npm/uuid@8.3.2"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "ecommerce-api",
+      "dependsOn": [
+        "express",
+        "jsonwebtoken",
+        "uuid"
+      ]
+    },
+    {
+      "ref": "express",
+      "dependsOn": [
+        "body-parser"
+      ]
+    },
+    {
+      "ref": "body-parser",
+      "dependsOn": [
+        "lodash"
+      ]
+    },
+    {
+      "ref": "jsonwebtoken",
+      "dependsOn": []
+    },
+    {
+      "ref": "uuid",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash",
+      "dependsOn": []
+    }
+  ]
+}
