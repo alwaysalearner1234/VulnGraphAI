@@ -1,6 +1,6 @@
 # VulnGraph AI
 
-Demo video link : https://www.youtube.com/watch?v=Ga550O0RQOk
+Demo video link : [https://www.youtube.com/watch?v=Ga550O0RQOk](https://youtu.be/2YSPnvSGcDw?si=qJootmai-z84F67t)
 
 Intelligent dependency risk scoring, graph-based reachability analysis, and vulnerability prioritization platform.
 
